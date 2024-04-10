@@ -41,6 +41,17 @@ Then clone it to your local machine and run:
 $ bundle
 ```
 
+## Build locally
+
+Run locally in docker for test:
+```
+docker run -it -v $(pwd):/usr/src/velp.github.io -w /usr/src/velp.github.io -p 0.0.0.0:4000:4000/tcp -e JEKYLL_GITHUB_TOKEN=$JEKYLL_GITHUB_TOKEN ruby bash
+bundle install
+bundle exec jekyll server --host 0.0.0.0 --watch --incremental --unpublished --drafts --trace
+```
+
+Open page: http://127.0.0.1:4000
+
 ## Usage
 
 Please see the [theme's docs](https://github.com/cotes2020/jekyll-theme-chirpy#documentation).
