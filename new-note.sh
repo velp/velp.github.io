@@ -7,6 +7,7 @@ set -o pipefail
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S %z')
 
+POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case $1 in
     -t|--title)
@@ -18,17 +19,22 @@ while [[ $# -gt 0 ]]; do
       echo "Unknown option $1"
       exit 1
       ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
   esac
 done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 if [[ -z $TITLE ]]; then
     echo "-t | --title artgument required"
     exit 1
 fi
 
-post_file_path=$ROOT/_posts/$(echo $TIMESTAMP | awk '{print $1}')-$(echo $TITLE | sed 's/ /_/g').md
-
-cat <<EOT >> $post_file_path
+IFS=
+template="$(cat <<-EOF
 ---
 title: $TITLE
 date: $TIMESTAMP
@@ -63,7 +69,26 @@ toc: true
 
 > This is an example of a Danger block.
 {: .prompt-danger }
----
-EOT
+EOF
+)"
 
-/usr/local/bin/vscode $post_file_path
+function create_note {
+  post_file_path=$ROOT/_posts/$(echo $TIMESTAMP | awk '{print $1}')-$(echo $TITLE | sed 's/ /_/g').md
+  if test -f $post_file_path; then
+    echo "File $post_file_path exists! Use another title"
+    exit 1
+  fi
+  echo $template > $post_file_path
+  /usr/local/bin/vscode $post_file_path
+}
+
+function publish_note {
+  git -C $ROOT commit -a -m "$TITLE"
+  git -C $ROOT push origin master
+}
+
+case $1 in
+  "publish") publish_note;;
+  "create") create_note;;
+  *) echo "save|create action required";;
+esac
